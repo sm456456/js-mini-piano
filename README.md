@@ -1,2 +1,2 @@
 # js-mini-piano
-Mini paino exercise in JavaScript
+Mini piano exercise in JavaScript
