@@ -1,5 +1,6 @@
+const audioContext = new AudioContext()
+
 const NOTE_DETAILS = [
-  // it's all capital because it's not gonna change
   { note: "C", key: "Z", frequency: 261.626 },
   { note: "Db", key: "S", frequency: 277.183 },
   { note: "D", key: "X", frequency: 293.665 },
@@ -17,7 +18,7 @@ const NOTE_DETAILS = [
 /*Steps:
 1. add event listeners for every key press
 2. extract necessary values from that event; e.code
-3. add active class
+3. add "active" key to the object
 4. compare keyboard keys with note_details variable
 5. select all notes in the dom
 6. toggle active value
@@ -31,8 +32,47 @@ document.addEventListener("keydown", e => {
   if (e.repeat) return
   const keyCode = e.code
   const noteDetail = getNoteDetails(keyCode)
+  if (noteDetail == null) return
+  noteDetail.active = true
+  playNotes()
+})
+
+document.addEventListener("keyup", e => {
+  if (e.repeat) return
+  const keyCode = e.code
+  const noteDetail = getNoteDetails(keyCode)
+  if (noteDetail == null) return
+  noteDetail.active = false
+  playNotes()
 })
 
 function getNoteDetails(keyboardKey) {
   return NOTE_DETAILS.find(note => `Key${note.key}` === keyboardKey)
+}
+
+function playNotes() {
+  NOTE_DETAILS.forEach(note => {
+    let keyElement = document.querySelector(`[data-note="${note.note}"]`)
+    keyElement.classList.toggle("active", note.active || false)
+    if (note.oscillator != null) {
+      note.oscillator.stop()
+      note.oscillator.disconnect()
+    }
+  })
+  const activeNotes = NOTE_DETAILS.filter(note => note.active)
+  const gain = 1 / activeNotes.length
+  activeNotes.forEach(note => {
+    startNote(note, gain)
+  })
+}
+
+function startNote(noteDetail, gain) {
+  const gainNode = audioContext.createGain()
+  gainNode.gain.value = gain
+  const oscillator = audioContext.createOscillator()
+  oscillator.frequency.value = noteDetail.frequency
+  oscillator.type = "sine"
+  oscillator.connect(gainNode).connect(audioContext.destination)
+  oscillator.start()
+  noteDetail.oscillator = oscillator
 }
